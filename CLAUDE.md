@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev      # Start development server (localhost:5173)
-npm run build    # TypeScript compile + Vite production build
-npm run preview  # Preview production build
+npm run build    # TypeScript compile + Vite production build - –
+npm run preview  # Preview production build–----–
 ```
 
 No test runner or linter is currently configured. TypeScript strict mode handles type checking.

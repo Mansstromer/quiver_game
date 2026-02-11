@@ -29,9 +29,9 @@ function getMessage(grade: string, levelNumber: number): string {
     }
   } else if (levelNumber === 3) {
     if (grade === 'A' || grade === 'B') {
-      return 'Incredible! Managing 6 SKUs is no easy feat.';
+      return 'Incredible! Managing multiple SKUs is no easy feat.';
     } else if (grade === 'C') {
-      return 'Managing 6 SKUs at once is incredibly difficult.';
+      return 'Managing multiple SKUs at once is incredibly difficult.';
     } else {
       return 'Don\'t worry - this level is designed to be nearly impossible for humans. Let\'s see how Quiver handles it!';
     }
@@ -86,25 +86,26 @@ export function EndScreen({
               </div>
             ))}
           </div>
-          <div className="score-amount">{formatCost(totalCost)}</div>
-          <div className="score-label">Total Cost</div>
         </div>
 
-        <div className="score-breakdown">
-          <div className="breakdown-item">
-            <span className="breakdown-label">Holding Costs</span>
-            <span className="breakdown-value">{formatCost(totalHoldingCost)}</span>
+        <div className="cost-addition-table">
+          <div className="cost-row">
+            <span className="cost-label">Holding Costs:</span>
+            <span className="cost-value">{formatCost(totalHoldingCost)}</span>
           </div>
-          <div className="breakdown-item stockout">
-            <span className="breakdown-label">Stockout Penalties</span>
-            <span className="breakdown-value">{formatCost(totalStockoutCost)}</span>
+          <div className="cost-row">
+            <span className="cost-label">Ordering Costs:</span>
+            <span className="cost-value">{formatCost(totalOrderingCost)}</span>
           </div>
-          {totalOrderingCost > 0 && (
-            <div className="breakdown-item">
-              <span className="breakdown-label">Order Costs</span>
-              <span className="breakdown-value">{formatCost(totalOrderingCost)}</span>
-            </div>
-          )}
+          <div className="cost-row stockout">
+            <span className="cost-label">Stockout Penalties:</span>
+            <span className="cost-value-plus">+ {formatCost(totalStockoutCost)}</span>
+          </div>
+          <div className="cost-divider"></div>
+          <div className="cost-row total">
+            <span className="cost-label">Total Cost:</span>
+            <span className="cost-value-total">{formatCost(totalCost)}</span>
+          </div>
         </div>
 
         <p className="score-message">{message}</p>

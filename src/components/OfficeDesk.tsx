@@ -18,27 +18,6 @@ export function OfficeDesk({ children }: OfficeDeskProps) {
           </div>
         </div>
 
-        <div className="desk-items">
-          <div className="keyboard">
-            <div className="keyboard-keys">
-              {Array.from({ length: 30 }).map((_, i) => (
-                <div key={i} className="key" />
-              ))}
-            </div>
-          </div>
-          <div className="mouse" />
-          <div className="coffee-mug">
-            <div className="mug-handle" />
-          </div>
-          <div className="plant">
-            <div className="plant-pot" />
-            <div className="plant-leaves">
-              <div className="leaf" />
-              <div className="leaf" />
-              <div className="leaf" />
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useRef, useMemo, useCallback, useState } from 'react';
 import { useGameState } from '../hooks/useGameState';
 import { useGameLoop } from '../hooks/useGameLoop';
 import { useSoundEffects } from '../hooks/useSoundEffects';
@@ -11,10 +11,9 @@ import { RulesScreen } from './RulesScreen';
 import { Level2InfoScreen } from './Level2InfoScreen';
 import { MultiSKUGame } from './MultiSKUGame';
 import { EndScreen } from './EndScreen';
-import { EducationalScreen } from './EducationalScreen';
-import { CTAScreen } from './CTAScreen';
+import { OutroScreen } from './OutroScreen';
 import { OfficeDesk } from './OfficeDesk';
-import { GRAPH_WIDTH, GRAPH_HEIGHT } from '../game/constants';
+import { OrderTooltip } from './OrderTooltip';
 import { createLevel1, createLevel2, createLevel3, createLevel3QuiverDemo } from '../game/levels';
 import { ProductConfig } from '../game/types';
 
@@ -29,12 +28,17 @@ export function Game() {
     tick,
     continueToNextLevel,
     startQuiverDemo,
-    goToCTA,
     goToStart,
   } = useGameState();
   const { playSound, initialize } = useSoundEffects();
   const prevStockoutRef = useRef(false);
   const prevOrderCountRef = useRef(0);
+  const [showOrderTooltip, setShowOrderTooltip] = useState(false);
+  const hasPlacedFirstOrder = useRef(false);
+  const [graphSize, setGraphSize] = useState({
+    width: Math.min(800, Math.floor(window.innerWidth * 0.52)),
+    height: Math.min(400, Math.floor(window.innerWidth * 0.26)),
+  });
 
   // Create level configs based on selected product
   const level1 = useMemo(
@@ -53,6 +57,16 @@ export function Game() {
     () => state.selectedProduct ? createLevel3QuiverDemo(state.selectedProduct) : null,
     [state.selectedProduct]
   );
+
+  // Dynamic graph sizing
+  useEffect(() => {
+    const updateSize = () => {
+      const w = Math.min(800, Math.floor(window.innerWidth * 0.52));
+      setGraphSize({ width: w, height: Math.floor(w * 0.5) });
+    };
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   // Determine current level config based on status
   const currentLevel = useMemo(() => {
@@ -87,7 +101,6 @@ export function Game() {
     });
   }, [currentLevel, state.time]);
 
-  // Set up game loop
   useGameLoop({
     state,
     tick: (deltaTime) => {
@@ -134,6 +147,9 @@ export function Game() {
     if (!level1) return;
     playSound('click');
     startLevel(1, level1);
+    // Show order tooltip for Level 1
+    hasPlacedFirstOrder.current = false;
+    setShowOrderTooltip(true);
   };
 
   const handleStartLevel2 = () => {
@@ -152,6 +168,11 @@ export function Game() {
     if (!firstSkuConfig || !state.selectedProduct) return;
     playSound('orderPlaced');
     placeOrder(firstSkuConfig.id, state.selectedProduct);
+    // Dismiss tooltip on first order
+    if (!hasPlacedFirstOrder.current) {
+      hasPlacedFirstOrder.current = true;
+      setShowOrderTooltip(false);
+    }
   }, [firstSkuConfig, state.selectedProduct, playSound, placeOrder]);
 
   const handlePlaceOrderForSku = (skuId: string) => {
@@ -171,11 +192,6 @@ export function Game() {
     startQuiverDemo(level3Quiver);
   };
 
-  const handleGoToCTA = () => {
-    playSound('click');
-    goToCTA();
-  };
-
   const handlePlayAgain = () => {
     playSound('click');
     goToStart();
@@ -189,13 +205,24 @@ export function Game() {
   const isSingleSkuPlaying = state.status === 'level-1' || state.status === 'level-2';
   const isMultiSkuPlaying = state.status === 'level-3' || state.status === 'quiver-demo';
 
+  // Prevent spacebar from scrolling the page during any game state
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Keyboard shortcut: Spacebar to place order (single-SKU only)
   useEffect(() => {
     if (!isSingleSkuPlaying) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !e.repeat) {
-        e.preventDefault();
         handlePlaceOrder();
       }
     };
@@ -208,8 +235,16 @@ export function Game() {
   const level3PlayerScore = state.levelScores.find(s => s.levelId === 'level-3');
   const quiverScore = state.levelScores.find(s => s.levelId === 'level-3-quiver');
 
+  // Show logo during gameplay states
+  const showGlobalLogo = isSingleSkuPlaying || isMultiSkuPlaying;
+
   return (
     <div className="game-container">
+      {showGlobalLogo && (
+        <div className="global-quiver-logo">
+          <img src="/quiver-logo.png" alt="Quiver" />
+        </div>
+      )}
       <header className="game-header">
         <h1 className="game-title-main">Demand Planner Simulator 2026</h1>
       </header>
@@ -231,19 +266,27 @@ export function Game() {
               skuState={firstSkuState}
               skuConfig={firstSkuConfig}
               level={currentLevel}
-              width={GRAPH_WIDTH}
-              height={GRAPH_HEIGHT}
+              width={graphSize.width}
+              height={graphSize.height}
               maxInventory={state.selectedProduct?.maxInventory ?? 150}
             />
-            <GameControls
-              state={state}
-              skuState={firstSkuState}
-              skuConfig={firstSkuConfig}
-              levelQuiverEnabled={currentLevel.quiverEnabled}
-              onPlaceOrder={handlePlaceOrder}
-              onEnableQuiver={enableQuiver}
-              onPlayClick={handlePlayClick}
-            />
+            <div className="game-controls-wrapper">
+              {state.status === 'level-1' && (
+                <OrderTooltip
+                  show={showOrderTooltip}
+                  onDismiss={() => setShowOrderTooltip(false)}
+                />
+              )}
+              <GameControls
+                state={state}
+                skuState={firstSkuState}
+                skuConfig={firstSkuConfig}
+                levelQuiverEnabled={currentLevel.quiverEnabled}
+                onPlaceOrder={handlePlaceOrder}
+                onEnableQuiver={enableQuiver}
+                onPlayClick={handlePlayClick}
+              />
+            </div>
           </div>
         </OfficeDesk>
       )}
@@ -311,16 +354,13 @@ export function Game() {
       )}
 
       {state.status === 'educational' && (
-        <EducationalScreen
+        <OutroScreen
           playerScore={level3PlayerScore}
           quiverScore={quiverScore}
-          onContinue={handleGoToCTA}
+          onPlayAgain={handlePlayAgain}
         />
       )}
 
-      {state.status === 'cta' && (
-        <CTAScreen onPlayAgain={handlePlayAgain} />
-      )}
     </div>
   );
 }

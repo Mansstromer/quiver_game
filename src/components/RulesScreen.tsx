@@ -1,6 +1,5 @@
 import { ProductConfig } from '../game/types';
 import { getMargin } from '../game/products';
-import { GAME_DURATION, BASE_LEAD_TIME } from '../game/constants';
 
 interface RulesScreenProps {
   product: ProductConfig;
@@ -24,7 +23,7 @@ export function RulesScreen({ product, onStart }: RulesScreenProps) {
 
         <div className="rules-section">
           <h2>Your Costs</h2>
-          <div className="cost-cards">
+          <div className="cost-cards-with-operators">
             <div className="cost-card">
               <div className="cost-icon">📦</div>
               <div className="cost-name">Holding Cost</div>
@@ -36,7 +35,9 @@ export function RulesScreen({ product, onStart }: RulesScreenProps) {
               </div>
             </div>
 
-            <div className="cost-card stockout-card">
+            <div className="cost-operator">+</div>
+
+            <div className="cost-card">
               <div className="cost-icon">⚠️</div>
               <div className="cost-name">Stockout Cost</div>
               <div className="cost-formula">
@@ -46,6 +47,8 @@ export function RulesScreen({ product, onStart }: RulesScreenProps) {
                 €{margin.toFixed(2)}/unit
               </div>
             </div>
+
+            <div className="cost-operator">+</div>
 
             <div className="cost-card">
               <div className="cost-icon">🚚</div>
@@ -60,32 +63,11 @@ export function RulesScreen({ product, onStart }: RulesScreenProps) {
           </div>
         </div>
 
-        <div className="rules-section">
-          <h2>Game Parameters</h2>
-          <div className="params-grid">
-            <div className="param-item">
-              <span className="param-label">Duration</span>
-              <span className="param-value">{GAME_DURATION}s (3 months)</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Lead Time</span>
-              <span className="param-value">{BASE_LEAD_TIME}s (~1.5 weeks)</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Order Quantity</span>
-              <span className="param-value">{product.baseOrderQuantity} units</span>
-            </div>
-            <div className="param-item">
-              <span className="param-label">Starting Inventory</span>
-              <span className="param-value">{product.baseInitialInventory} units</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rules-goal">
-          <div className="goal-icon">🎯</div>
-          <div className="goal-text">
-            <strong>Goal:</strong> Minimize total costs while avoiding stockouts
+        <div className="cost-total-section">
+          <div className="cost-equals">=</div>
+          <div className="cost-card cost-total-card">
+            <div className="cost-name">Total Cost</div>
+            <div className="cost-total-goal">GOAL: Minimize this!</div>
           </div>
         </div>
 

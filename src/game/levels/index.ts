@@ -1,7 +1,6 @@
 import { LevelConfig, ProductConfig, DemandSegment, SKUConfig } from '../types';
 import {
   GAME_DURATION,
-  SECONDS_PER_MONTH,
   LEVEL_2_LEAD_TIME_MULTIPLIER,
   MARKETING_EVENT_DURATION,
   MARKETING_EVENT_DEMAND_MULTIPLIER,
@@ -10,38 +9,90 @@ import {
 } from '../constants';
 
 /**
+ * Seeded PRNG (mulberry32) for deterministic demand generation
+ */
+function mulberry32(seed: number): () => number {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Band level type for demand generation
+ */
+type BandLevel = 'high' | 'medium' | 'low';
+
+/**
+ * Band multiplier ranges: center value range and per-second swing range
+ */
+const BAND_CONFIG: Record<BandLevel, { minCenter: number; maxCenter: number; swing: number }> = {
+  high:   { minCenter: 3.5, maxCenter: 5.5, swing: 6.0 },
+  medium: { minCenter: 1.8, maxCenter: 3.0, swing: 4.2 },
+  low:    { minCenter: 0.4, maxCenter: 1.0, swing: 2.4 },
+};
+
+/**
+ * Band sequences per pattern type (7 bands)
+ */
+const BAND_PATTERNS: Record<'stable' | 'increasing' | 'variable', BandLevel[]> = {
+  stable:     ['medium', 'high', 'low', 'medium', 'high', 'low', 'medium'],
+  variable:   ['low', 'high', 'low', 'high', 'low', 'high', 'low'],
+  increasing: ['low', 'low', 'medium', 'medium', 'high', 'high', 'high'],
+};
+
+/**
  * Generate demand segments for a level
- * Creates 3 segments (one per month) with varying demand rates
- * Sharper curves require more active inventory management
+ * Creates 36 one-second segments using 5-second bands with dramatic per-second variation.
+ * 7 bands of 5 seconds each (last band gets 6 seconds to fill 36s).
+ * Each band is tagged high/medium/low with large per-second swings.
+ * No smooth interpolation between bands — jumps are part of the challenge.
+ * Uses seeded PRNG for reproducibility.
  */
 function generateDemandSegments(
   baseRate: number,
-  pattern: 'stable' | 'increasing' | 'variable'
+  pattern: 'stable' | 'increasing' | 'variable',
+  seed: number = 42
 ): DemandSegment[] {
-  switch (pattern) {
-    case 'stable':
-      // More variation even in "stable" pattern - requires ~6-7 orders for protein bars
-      return [
-        { startTime: 0, endTime: SECONDS_PER_MONTH, baseRate: baseRate * 2.03 },
-        { startTime: SECONDS_PER_MONTH, endTime: SECONDS_PER_MONTH * 2, baseRate: baseRate * 3.04 },
-        { startTime: SECONDS_PER_MONTH * 2, endTime: GAME_DURATION, baseRate: baseRate * 1.69 },
-      ];
-    case 'increasing':
-      // Steep ramp-up pattern
-      return [
-        { startTime: 0, endTime: SECONDS_PER_MONTH, baseRate: baseRate * 1.35 },
-        { startTime: SECONDS_PER_MONTH, endTime: SECONDS_PER_MONTH * 2, baseRate: baseRate * 2.54 },
-        { startTime: SECONDS_PER_MONTH * 2, endTime: GAME_DURATION, baseRate: baseRate * 3.72 },
-      ];
-    case 'variable':
-    default:
-      // High variability - challenging pattern
-      return [
-        { startTime: 0, endTime: SECONDS_PER_MONTH, baseRate: baseRate * 2.37 },
-        { startTime: SECONDS_PER_MONTH, endTime: SECONDS_PER_MONTH * 2, baseRate: baseRate * 3.38 },
-        { startTime: SECONDS_PER_MONTH * 2, endTime: GAME_DURATION, baseRate: baseRate * 1.35 },
-      ];
+  const rng = mulberry32(seed);
+  const bands = BAND_PATTERNS[pattern];
+
+  // 7 bands: first 6 are 5 seconds, last is 6 seconds (5*6 + 6 = 36)
+  const bandDurations = [5, 5, 5, 5, 5, 5, 6];
+
+  // Pick a fixed center for each band using the RNG
+  const bandCenters = bands.map((level) => {
+    const config = BAND_CONFIG[level];
+    return config.minCenter + rng() * (config.maxCenter - config.minCenter);
+  });
+
+  const segments: DemandSegment[] = [];
+  let t = 0;
+
+  for (let b = 0; b < bands.length; b++) {
+    const bandLevel = bands[b];
+    const config = BAND_CONFIG[bandLevel];
+    const center = bandCenters[b];
+    const duration = bandDurations[b];
+
+    for (let s = 0; s < duration; s++) {
+      // Per-second swing: random offset around the band center
+      const swing = (rng() * 2 - 1) * config.swing;
+      const multiplier = Math.max(0.3, center + swing);
+
+      segments.push({
+        startTime: t,
+        endTime: t + 1,
+        baseRate: baseRate * multiplier,
+      });
+      t++;
+    }
   }
+
+  return segments;
 }
 
 /**
@@ -90,14 +141,15 @@ export function createLevel2(product: ProductConfig): LevelConfig {
     name: 'Level 2',
     description: 'Handle unexpected demand spikes',
     duration: GAME_DURATION,
-    showForecast: false,
+    showForecast: true,
     leadTimeMultiplier: LEVEL_2_LEAD_TIME_MULTIPLIER,
     marketingEvents: [
       {
         triggerTime: LEVEL_2_MARKETING_EVENT_TIME,
         duration: MARKETING_EVENT_DURATION,
         demandMultiplier: MARKETING_EVENT_DEMAND_MULTIPLIER,
-        label: 'Marketing Campaign Begins!',
+        label: 'Marketing Campaign',
+        notifyTime: LEVEL_2_MARKETING_EVENT_TIME - 6,  // Visible when popup shows (4 weeks before)
       },
     ],
     quiverEnabled: false,
@@ -116,9 +168,9 @@ export function createLevel2(product: ProductConfig): LevelConfig {
 
 /**
  * Create Level 3 configuration for a product
- * - 6 SKUs (variants)
+ * - 4 SKUs (variants) in 2x2 grid
  * - NO forecast
- * - 2 marketing events affecting different SKUs
+ * - 2 marketing events: SKU 0 (top-left) at 7s, SKU 3 (bottom-right) at 20s
  * - Normal lead time
  */
 export function createLevel3(product: ProductConfig): LevelConfig {
@@ -127,45 +179,45 @@ export function createLevel3(product: ProductConfig): LevelConfig {
 
   // Generate slightly different demand patterns for each SKU
   const demandPatterns: Array<'stable' | 'increasing' | 'variable'> = [
-    'stable', 'variable', 'increasing', 'variable', 'stable', 'increasing'
+    'stable', 'variable', 'increasing', 'stable'
   ];
 
-  // Generate SKU configs
-  const skus: SKUConfig[] = variants.map((variant, index) => {
-    // Vary the base rate slightly for each SKU (80% to 120%)
-    const skuBaseRate = baseRate * (0.8 + (index * 0.08));
+  // Generate SKU configs for 4 SKUs
+  const skus: SKUConfig[] = variants.slice(0, 4).map((variant, index) => {
+    // Vary the base rate slightly for each SKU (90% to 110%)
+    const skuBaseRate = baseRate * (0.9 + (index * 0.05));
 
     return {
       id: `sku-${index + 1}`,
       name: `${product.name}`,
       variant: variant,
-      demandSegments: generateDemandSegments(skuBaseRate, demandPatterns[index]),
+      demandSegments: generateDemandSegments(skuBaseRate, demandPatterns[index % demandPatterns.length], 42 + index * 17),
       initialInventory: product.baseInitialInventory,
       orderQuantity: product.baseOrderQuantity,
-      // SKU 1 (index 0, top-left) gets event at 4s, SKU 5 (index 4, bottom-middle) gets event at 14s
-      marketingEventIndex: index === 0 ? 0 : index === 4 ? 1 : undefined,
+      // SKU 0 (top-left) gets event at 7s, SKU 3 (bottom-right) gets event at 20s
+      marketingEventIndex: index === 0 ? 0 : index === 3 ? 1 : undefined,
     };
   });
 
   return {
     id: 'level-3',
     name: 'Level 3',
-    description: 'Manage 6 SKUs simultaneously',
+    description: 'Manage 4 SKUs simultaneously',
     duration: GAME_DURATION,
-    showForecast: false,
+    showForecast: true,
     leadTimeMultiplier: 1.0,  // Normal 4-second lead time
     marketingEvents: [
       {
-        triggerTime: LEVEL_3_MARKETING_EVENT_TIMES[0],  // 4 seconds
+        triggerTime: LEVEL_3_MARKETING_EVENT_TIMES[0],  // 7 seconds
         duration: MARKETING_EVENT_DURATION,
         demandMultiplier: MARKETING_EVENT_DEMAND_MULTIPLIER,
-        label: 'Marketing Campaign Begins!',
+        label: 'Marketing Campaign',
       },
       {
-        triggerTime: LEVEL_3_MARKETING_EVENT_TIMES[1],  // 14 seconds
+        triggerTime: LEVEL_3_MARKETING_EVENT_TIMES[1],  // 20 seconds
         duration: MARKETING_EVENT_DURATION,
         demandMultiplier: MARKETING_EVENT_DEMAND_MULTIPLIER,
-        label: 'Marketing Campaign Begins!',
+        label: 'Marketing Campaign',
       },
     ],
     quiverEnabled: false,
@@ -206,7 +258,7 @@ export const LEVEL_1: LevelConfig = {
         { startTime: 12, endTime: 24, baseRate: 12 },
         { startTime: 24, endTime: 36, baseRate: 6 },
       ],
-      initialInventory: 80,
+      initialInventory: 112,
       orderQuantity: 50,
     },
   ],

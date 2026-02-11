@@ -12,6 +12,7 @@ interface InventoryGraphProps {
   height: number;
   maxInventory: number;  // Y-axis maximum (product-specific)
   compact?: boolean;  // For multi-SKU display
+  reorderPoint?: number;  // Optional ROP line for quiver-demo
 }
 
 function drawGrid(
@@ -83,8 +84,9 @@ function drawMarketingEventLine(
   height: number,
   compact: boolean
 ) {
-  // Only draw if the event has been triggered (current time >= trigger time)
-  if (currentTime < event.triggerTime) return;
+  // Show zone once the notification time is reached (or triggerTime if no notifyTime)
+  const visibleFrom = event.notifyTime ?? event.triggerTime;
+  if (currentTime < visibleFrom) return;
 
   const x = (event.triggerTime / gameDuration) * width;
 
@@ -105,33 +107,58 @@ function drawMarketingEventLine(
   // Draw label (unless compact mode)
   if (!compact) {
     ctx.fillStyle = COLORS.marketingEventLine;
-    ctx.font = 'bold 11px Inter, sans-serif';
+    ctx.font = 'bold 14px DM Sans, sans-serif';
     ctx.textAlign = 'left';
     ctx.save();
-    ctx.translate(x + 5, 20);
+    ctx.translate(x + 5, 22);
     ctx.fillText(event.label, 0, 0);
     ctx.restore();
   } else {
     // In compact mode, just show a small indicator
     ctx.fillStyle = COLORS.marketingEventLine;
-    ctx.font = 'bold 9px Inter, sans-serif';
+    ctx.font = 'bold 9px DM Sans, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('!', x + 3, 12);
   }
 }
 
-function drawZeroLine(ctx: CanvasRenderingContext2D, width: number, height: number) {
-  ctx.strokeStyle = COLORS.stockoutLine;
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 5]);
+/**
+ * Wraps getDemandBetween to apply marketing event multipliers for overlapping time ranges.
+ * This ensures the forecast projection line accounts for demand spikes during marketing events.
+ */
+function getDemandBetweenWithEvents(
+  skuConfig: SKUConfig,
+  startTime: number,
+  endTime: number,
+  gameDuration: number,
+  level: LevelConfig
+): number {
+  const baseDemand = getDemandBetween(skuConfig, startTime, endTime, gameDuration);
 
-  const y = height;
-  ctx.beginPath();
-  ctx.moveTo(0, y);
-  ctx.lineTo(width, y);
-  ctx.stroke();
+  if (skuConfig.marketingEventIndex === undefined) {
+    return baseDemand;
+  }
 
-  ctx.setLineDash([]);
+  const event = level.marketingEvents[skuConfig.marketingEventIndex];
+  if (!event) return baseDemand;
+
+  const eventEnd = event.triggerTime + event.duration;
+
+  // Calculate overlap between [startTime, endTime] and [triggerTime, eventEnd]
+  const overlapStart = Math.max(startTime, event.triggerTime);
+  const overlapEnd = Math.min(endTime, eventEnd);
+
+  if (overlapStart >= overlapEnd) {
+    // No overlap with marketing event
+    return baseDemand;
+  }
+
+  // Get the demand specifically in the overlap window
+  const overlapDemand = getDemandBetween(skuConfig, overlapStart, overlapEnd, gameDuration);
+
+  // The overlap demand is already counted in baseDemand at 1x.
+  // We need to add (multiplier - 1) * overlapDemand to get the full multiplied effect.
+  return baseDemand + overlapDemand * (event.demandMultiplier - 1);
 }
 
 function drawInventoryHistory(
@@ -172,7 +199,8 @@ function drawDemandProjection(
   gameDuration: number,
   width: number,
   height: number,
-  maxInventory: number
+  maxInventory: number,
+  level: LevelConfig
 ) {
   // Projection shows future inventory: declining lines for demand, vertical jumps for orders
   const lookaheadTime = Math.min(10, gameDuration - currentTime);
@@ -214,7 +242,7 @@ function drawDemandProjection(
 
     for (let j = 1; j <= steps; j++) {
       const t = segmentStart + j * dt;
-      const demand = getDemandBetween(skuConfig, segmentStart + (j - 1) * dt, t, gameDuration);
+      const demand = getDemandBetweenWithEvents(skuConfig, segmentStart + (j - 1) * dt, t, gameDuration, level);
       inventory = Math.max(0, inventory - demand);
       ctx.lineTo(toX(t), toY(inventory));
     }
@@ -309,7 +337,7 @@ function drawLabels(
   maxInventory: number
 ) {
   ctx.fillStyle = COLORS.textSecondary;
-  ctx.font = compact ? '9px Inter, sans-serif' : '11px Inter, sans-serif';
+  ctx.font = compact ? '9px DM Sans, sans-serif' : '11px DM Sans, sans-serif';
 
   // Y-axis labels - show only 4-5 labels regardless of max value
   ctx.textAlign = 'right';
@@ -322,7 +350,7 @@ function drawLabels(
     .map(m => m * magnitude)
     .find(step => maxInventory / step <= targetLabels + 1) || rawStep;
 
-  for (let inv = 0; inv <= maxInventory; inv += invStep) {
+  for (let inv = invStep; inv <= maxInventory; inv += invStep) {
     const y = height - (inv / maxInventory) * height;
     // Skip labels too close to the top edge (would get cut off)
     if (y < 12) continue;
@@ -340,6 +368,35 @@ function drawLabels(
   }
 }
 
+function drawReorderPointLine(
+  ctx: CanvasRenderingContext2D,
+  reorderPoint: number,
+  width: number,
+  height: number,
+  maxInventory: number
+) {
+  // Skip if ROP is above visible range
+  if (reorderPoint > maxInventory) return;
+
+  const y = height - (reorderPoint / maxInventory) * height;
+
+  ctx.strokeStyle = '#8b5cf6';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 4]);
+
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(width, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Draw "ROP" label
+  ctx.fillStyle = '#8b5cf6';
+  ctx.font = 'bold 9px DM Sans, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('ROP', 4, y - 4);
+}
+
 export function InventoryGraph({
   state,
   skuState,
@@ -349,6 +406,7 @@ export function InventoryGraph({
   height,
   maxInventory,
   compact = false,
+  reorderPoint,
 }: InventoryGraphProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -381,7 +439,7 @@ export function InventoryGraph({
     // Draw layers
     drawGrid(ctx, width, height, gameDuration, maxInventory);
     drawMonthDividers(ctx, width, height, gameDuration);
-    drawZeroLine(ctx, width, height);
+    // Zero line removed per design update
     drawLabels(ctx, width, height, gameDuration, compact, maxInventory);
 
     // Draw marketing event lines (if any affect this SKU)
@@ -392,6 +450,11 @@ export function InventoryGraph({
           drawMarketingEventLine(ctx, event, state.time, gameDuration, width, height, compact);
         }
       });
+    }
+
+    // Draw ROP line for quiver-demo mode
+    if (reorderPoint !== undefined) {
+      drawReorderPointLine(ctx, reorderPoint, width, height, maxInventory);
     }
 
     // Draw SKU-specific elements if available
@@ -424,7 +487,8 @@ export function InventoryGraph({
           gameDuration,
           width,
           height,
-          maxInventory
+          maxInventory,
+          level
         );
       }
 
@@ -436,7 +500,7 @@ export function InventoryGraph({
     if (state.status === 'level-1' || state.status === 'level-2' || state.status === 'level-3' || state.status === 'quiver-demo') {
       drawTimeMarker(ctx, state.time, gameDuration, width, height);
     }
-  }, [state, skuState, skuConfig, level, width, height, maxInventory, compact, effectiveLeadTime]);
+  }, [state, skuState, skuConfig, level, width, height, maxInventory, compact, effectiveLeadTime, reorderPoint]);
 
   return (
     <canvas

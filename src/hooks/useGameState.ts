@@ -233,6 +233,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       // Calculate effective lead time with multiplier
       const effectiveLeadTime = (skuConfig.leadTime ?? 4) * state.levelConfig.leadTimeMultiplier;
 
+      // Max 5 pending orders per SKU at a time
+      if (skuState.pendingOrders.length >= 5) return state;
+
       // Allow ordering up to 50% above maxInventory to give players flexibility
       // The graph won't show above max, but orders are still allowed
       const totalPendingQuantity = skuState.pendingOrders.reduce(
@@ -319,12 +322,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         status: 'educational',
       };
 
-    case 'GO_TO_CTA':
-      return {
-        ...state,
-        status: 'cta',
-      };
-
     case 'ENABLE_QUIVER':
       return {
         ...state,
@@ -397,7 +394,6 @@ export function useGameState() {
     () => dispatch({ type: 'GO_TO_EDUCATIONAL' }),
     []
   );
-  const goToCTA = useCallback(() => dispatch({ type: 'GO_TO_CTA' }), []);
   const resetGame = useCallback(() => dispatch({ type: 'RESET_GAME' }), []);
 
   return {
@@ -416,7 +412,6 @@ export function useGameState() {
     startLevel2Info,
     startQuiverDemo,
     goToEducational,
-    goToCTA,
     resetGame,
   };
 }

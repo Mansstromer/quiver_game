@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { GameState, LevelConfig, ProductConfig } from '../game/types';
+import { GameState, LevelConfig, ProductConfig, SKUConfig, SKUState } from '../game/types';
 import { InventoryGraph } from './InventoryGraph';
 import { formatCost } from '../game/scoring';
+import { getQuiverMetricsForSKU, QuiverMetrics } from '../game/quiverAI';
 
 interface MultiSKUGameProps {
   state: GameState;
@@ -19,18 +20,17 @@ export function MultiSKUGame({
   quiverAutoPlay = false,
 }: MultiSKUGameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [graphSize, setGraphSize] = useState({ width: 350, height: 175 });
+  const [graphSize, setGraphSize] = useState({ width: 450, height: 200 });
 
-  // Calculate graph size based on container width - smaller to fit all 6 visible
+  // Calculate graph size based on container width for 3 SKU layout
   useEffect(() => {
     const updateSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.clientWidth;
-        // 3 columns with gaps (16px gaps)
-        const availableWidth = containerWidth - 32; // 2 gaps
-        const graphWidth = Math.min(320, Math.max(240, Math.floor(availableWidth / 3)));
-        const graphHeight = Math.floor(graphWidth * 0.45);
-        setGraphSize({ width: graphWidth, height: graphHeight });
+        // Bottom row: 2 graphs side by side
+        const bottomGraphWidth = Math.min(Math.floor(window.innerWidth * 0.32), Math.floor((containerWidth - 60) / 2));
+        const graphHeight = Math.floor(bottomGraphWidth * 0.42);
+        setGraphSize({ width: bottomGraphWidth, height: graphHeight });
       }
     };
 
@@ -45,31 +45,16 @@ export function MultiSKUGame({
   const totalOrderingCost = state.skuStates.reduce((sum, sku) => sum + sku.totalOrderingCost, 0);
   const totalCost = totalHoldingCost + totalStockoutCost + totalOrderingCost;
 
-  // Check if any marketing event is currently active
-  const activeMarketingEvent = level.marketingEvents.find((event) => {
-    const isActive = state.time >= event.triggerTime &&
-                     state.time < event.triggerTime + event.duration;
-    return isActive;
-  });
+  // Get SKU configs and states
+  const skuCount = level.skus.length;
 
   return (
-    <div className="multi-sku-container" ref={containerRef}>
-      {/* Marketing event notification */}
-      {activeMarketingEvent && (
-        <div className="marketing-event-notification">
-          <span className="notification-icon">📢</span>
-          <span className="notification-text">{activeMarketingEvent.label}</span>
-        </div>
-      )}
-
+    <div className="multi-sku-container multi-sku-4" ref={containerRef}>
       {/* Header with total costs */}
       <div className="multi-sku-header">
         <div className="multi-sku-title">
           <span className="product-icon">{product.icon}</span>
-          <span>{product.name} - 6 SKU Management</span>
-          {quiverAutoPlay && (
-            <span className="quiver-badge">Quiver Engine Active</span>
-          )}
+          <span>{product.name} - {skuCount} SKU Management</span>
         </div>
         <div className="multi-sku-totals">
           <div className="total-item">
@@ -92,69 +77,115 @@ export function MultiSKUGame({
         </div>
       </div>
 
-      {/* SKU Grid */}
+      {/* 2x2 grid of 4 SKUs */}
       <div className="multi-sku-grid">
-        {level.skus.map((skuConfig, index) => {
+        {level.skus.slice(0, 4).map((skuConfig, index) => {
           const skuState = state.skuStates.find(s => s.skuId === skuConfig.id);
-          const isStockout = skuState?.isStockout || false;
-
-          // Check if this SKU's marketing event is currently active
-          const marketingEvent = skuConfig.marketingEventIndex !== undefined
-            ? level.marketingEvents[skuConfig.marketingEventIndex]
-            : null;
-          const isEventActive = marketingEvent &&
-            state.time >= marketingEvent.triggerTime &&
-            state.time < marketingEvent.triggerTime + marketingEvent.duration;
-
-          return (
-            <div
-              key={skuConfig.id}
-              className={`sku-card ${isStockout ? 'stockout' : ''} ${isEventActive ? 'has-event' : ''}`}
-            >
-              <div className="sku-header">
-                <span className="sku-name">{skuConfig.variant || `SKU ${index + 1}`}</span>
-                <span className="sku-inventory">
-                  {skuState ? Math.floor(skuState.inventory) : 0} units
-                </span>
-              </div>
-
-              <InventoryGraph
-                state={state}
-                skuState={skuState}
-                skuConfig={skuConfig}
-                level={level}
-                width={graphSize.width}
-                height={graphSize.height}
-                maxInventory={product.maxInventory}
-                compact={true}
-              />
-
-              <div className="sku-controls">
-                <button
-                  className={`sku-order-button ${quiverAutoPlay ? 'disabled' : ''}`}
-                  onClick={() => !quiverAutoPlay && onPlaceOrder(skuConfig.id)}
-                  disabled={quiverAutoPlay}
-                >
-                  Order +{skuConfig.orderQuantity}
-                </button>
-                {skuState && skuState.pendingOrders.length > 0 && (
-                  <span className="sku-pending">
-                    {skuState.pendingOrders.length} pending
-                  </span>
-                )}
-              </div>
-            </div>
-          );
+          if (!skuState) return null;
+          return renderSkuCard(skuConfig, skuState, index, level, state, product, onPlaceOrder, quiverAutoPlay, graphSize);
         })}
       </div>
 
-      {/* Time display */}
+      {/* Time display in weeks */}
       <div className="multi-sku-time">
         <span className="time-label">Time:</span>
-        <span className="time-value">{state.time.toFixed(1)}s</span>
+        <span className="time-value">{(state.time / 3).toFixed(1)}</span>
         <span className="time-separator">/</span>
-        <span className="time-total">{level.duration}s</span>
+        <span className="time-total">12 weeks</span>
       </div>
+    </div>
+  );
+}
+
+function renderSkuCard(
+  skuConfig: SKUConfig,
+  skuState: SKUState,
+  index: number,
+  level: LevelConfig,
+  state: GameState,
+  product: ProductConfig,
+  onPlaceOrder: (skuId: string) => void,
+  quiverAutoPlay: boolean,
+  graphSize: { width: number; height: number }
+) {
+  const isStockout = skuState?.isStockout || false;
+
+  // Check if this SKU's marketing event is currently active
+  const marketingEvent = skuConfig.marketingEventIndex !== undefined
+    ? level.marketingEvents[skuConfig.marketingEventIndex]
+    : null;
+  const isEventActive = marketingEvent &&
+    state.time >= marketingEvent.triggerTime &&
+    state.time < marketingEvent.triggerTime + marketingEvent.duration;
+
+  // Compute Quiver metrics for display in demo mode
+  const metrics: QuiverMetrics | null = quiverAutoPlay
+    ? getQuiverMetricsForSKU(state, skuState, skuConfig, level)
+    : null;
+
+  return (
+    <div
+      key={skuConfig.id}
+      className={`sku-card ${isStockout ? 'stockout' : ''} ${isEventActive ? 'has-event' : ''}`}
+    >
+      <div className="sku-header">
+        <span className="sku-name">{skuConfig.variant || `SKU ${index + 1}`}</span>
+        <span className="sku-inventory">
+          {skuState ? Math.floor(skuState.inventory) : 0} units
+        </span>
+      </div>
+
+      <InventoryGraph
+        state={state}
+        skuState={skuState}
+        skuConfig={skuConfig}
+        level={level}
+        width={graphSize.width}
+        height={graphSize.height}
+        maxInventory={product.maxInventory * 0.6}
+        compact={true}
+        reorderPoint={quiverAutoPlay && metrics ? metrics.reorderPoint : undefined}
+      />
+
+      {quiverAutoPlay && metrics ? (
+        <div className={`quiver-metrics-panel ${metrics.shouldOrder ? 'quiver-metrics-ordering' : ''}`}>
+          <div className="quiver-metrics-decision">
+            <span className="quiver-metrics-values">
+              <span title="Inventory Position (on-hand + on-order)" className={`quiver-metrics-ip ${metrics.shouldOrder ? 'ordering' : ''}`}>
+                IP {Math.floor(metrics.inventoryPosition)}
+              </span>
+              <span className="quiver-metrics-compare">
+                {metrics.inventoryPosition <= metrics.reorderPoint ? '≤' : '>'}
+              </span>
+              <span title="Reorder Point">ROP {Math.floor(metrics.reorderPoint)}</span>
+            </span>
+            {metrics.shouldOrder && (
+              <span className="quiver-metrics-order-signal">ORDER</span>
+            )}
+          </div>
+          <div className="quiver-metrics-breakdown">
+            <span title="Safety Stock">SS {Math.floor(metrics.safetyStock)}</span>
+            <span className="quiver-metrics-op">+</span>
+            <span title="Lead Time Demand">LTD {Math.floor(metrics.leadTimeDemand)}</span>
+            <span className="quiver-metrics-op">=</span>
+            <span title="Reorder Point">ROP {Math.floor(metrics.reorderPoint)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="sku-controls">
+          <button
+            className={`sku-order-button ${skuState.pendingOrders.length >= 5 ? 'disabled' : ''}`}
+            onClick={() => skuState.pendingOrders.length < 5 && onPlaceOrder(skuConfig.id)}
+          >
+            Order +{skuConfig.orderQuantity}
+          </button>
+          {skuState && skuState.pendingOrders.length > 0 && (
+            <span className="sku-pending">
+              {skuState.pendingOrders.length} pending
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

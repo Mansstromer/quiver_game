@@ -6,7 +6,6 @@ const INTRO_SLIDES: IntroSlide[] = [
     id: 'welcome',
     title: 'Supply Demand Planner',
     text: 'Simulator 2026',
-    subtext: 'Experience the challenge of inventory management',
   },
   {
     id: 'role',
@@ -15,18 +14,19 @@ const INTRO_SLIDES: IntroSlide[] = [
   },
   {
     id: 'buying',
-    text: 'You buy products',
-    subtext: 'Place orders to replenish inventory before it runs out',
+    text: 'Place orders to replenish inventory',
+    subtext: 'But watch out, every order costs money and takes time to arrive',
   },
   {
-    id: 'stockouts',
-    text: 'Prevent stock-outs',
-    subtext: 'Empty shelves mean lost sales and unhappy customers',
+    id: 'goal',
+    text: 'Minimize total costs',
+    subtext: 'Balance holding costs, stockout penalties, and ordering fees',
   },
   {
-    id: 'costs',
-    text: 'Minimize inventory costs',
-    subtext: 'Too much inventory ties up capital and costs money to store',
+    id: 'tutorial',
+    text: '',
+    image: '/tutorial.jpg',
+    imagePosition: 'center',
   },
 ];
 
@@ -57,6 +57,8 @@ export function StartScreen({ onComplete }: StartScreenProps) {
   const slide = INTRO_SLIDES[currentSlide];
   const isLastSlide = currentSlide === INTRO_SLIDES.length - 1;
   const isFirstSlide = currentSlide === 0;
+  const hasImage = slide.image && slide.imagePosition;
+  const isImageOnly = slide.imagePosition === 'center';
 
   return (
     <div className="intro-overlay start-screen" onClick={handleNext}>
@@ -64,18 +66,36 @@ export function StartScreen({ onComplete }: StartScreenProps) {
         Skip
       </button>
 
-      <div className={`intro-slide ${isFading ? 'fading' : ''}`}>
-        <div className="intro-text-container">
-          {slide.title && (
-            <div className="start-screen-title">{slide.title}</div>
-          )}
-          <div className={isFirstSlide ? 'start-screen-subtitle' : 'intro-text'}>
-            {slide.text}
+      <div className={`intro-slide ${isFading ? 'fading' : ''} ${hasImage && !isImageOnly ? 'with-image' : ''} ${isImageOnly ? 'image-only' : ''}`}>
+        {hasImage && slide.imagePosition === 'left' && (
+          <div className="intro-image-container">
+            <img src={slide.image} alt="Graph explanation" className="intro-image" />
           </div>
-          {slide.subtext && (
-            <div className="intro-subtext">{slide.subtext}</div>
-          )}
-        </div>
+        )}
+
+        {isImageOnly ? (
+          <div className="intro-image-container">
+            <img src={slide.image} alt="Tutorial" className="intro-image" />
+          </div>
+        ) : (
+          <div className="intro-text-container">
+            {slide.title && (
+              <div className="start-screen-title">{slide.title}</div>
+            )}
+            <div className={isFirstSlide ? 'start-screen-subtitle' : 'intro-text'}>
+              {slide.text}
+            </div>
+            {slide.subtext && (
+              <div className="intro-subtext">{slide.subtext}</div>
+            )}
+          </div>
+        )}
+
+        {hasImage && slide.imagePosition === 'right' && (
+          <div className="intro-image-container">
+            <img src={slide.image} alt="Graph explanation" className="intro-image" />
+          </div>
+        )}
       </div>
 
       <button

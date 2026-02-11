@@ -27,7 +27,8 @@ export function GameControls({
   const canOrder =
     isPlaying &&
     skuState &&
-    state.time - skuState.lastOrderTime >= 1;
+    state.time - skuState.lastOrderTime >= 1 &&
+    skuState.pendingOrders.length < 5;
   const hasPendingOrders = skuState && skuState.pendingOrders.length > 0;
   const orderQuantity = skuConfig?.orderQuantity ?? 50;
 

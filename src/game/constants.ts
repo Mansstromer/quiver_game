@@ -13,38 +13,28 @@ export const LEVEL_2_LEAD_TIME_MULTIPLIER = 1.5;  // 50% longer lead time
 // Marketing event
 export const MARKETING_EVENT_DURATION = 12;       // 12 seconds (longer duration)
 export const MARKETING_EVENT_DEMAND_MULTIPLIER = 2.2;  // 120% increase
-export const LEVEL_2_MARKETING_EVENT_TIME = 4;    // Triggers at 4 seconds
-export const LEVEL_3_MARKETING_EVENT_TIMES = [4, 14];  // Two events at different times
-
-// Graph dimensions
-export const GRAPH_WIDTH = 700;
-export const GRAPH_HEIGHT = 350;
-
-// Multi-SKU graph dimensions (for Level 3)
-export const MULTI_SKU_GRAPH_MIN_WIDTH = 300;
-export const MULTI_SKU_GRAPH_MIN_HEIGHT = 150;
-export const MULTI_SKU_GRAPH_MAX_WIDTH = 450;
-export const MULTI_SKU_GRAPH_MAX_HEIGHT = 225;
+export const LEVEL_2_MARKETING_EVENT_TIME = 14;   // Triggers at 14 seconds
+export const LEVEL_3_MARKETING_EVENT_TIMES = [7, 20];  // Two events at different times
 
 // Scoring thresholds (based on total cost) - per product and level
 export const GRADE_THRESHOLDS: Record<string, Record<string, { A: number; B: number; C: number; D: number }>> = {
   'protein-bar': {
-    'level-1': { A: 800, B: 1000, C: 1200, D: 1500 },
-    'level-2': { A: 1200, B: 1500, C: 1800, D: 2100 },
-    'level-3': { A: 8000, B: 10000, C: 13000, D: 17000 },
-    'level-3-quiver': { A: 8000, B: 10000, C: 13000, D: 17000 },
+    'level-1': { A: 950, B: 1150, C: 1350, D: 1550 },
+    'level-2': { A: 1100, B: 1300, C: 1500, D: 1700 },
+    'level-3': { A: 8600, B: 9000, C: 10000, D: 11000 },
+    'level-3-quiver': { A: 8600, B: 9000, C: 10000, D: 11000 },
   },
   'medicine': {
-    'level-1': { A: 1200, B: 1400, C: 1700, D: 2000 },
-    'level-2': { A: 1600, B: 1900, C: 2200, D: 2600 },
-    'level-3': { A: 10000, B: 13000, C: 17000, D: 22000 },
-    'level-3-quiver': { A: 10000, B: 13000, C: 17000, D: 22000 },
+    'level-1': { A: 2100, B: 2300, C: 2500, D: 2700 },
+    'level-2': { A: 2500, B: 2700, C: 2900, D: 3100 },
+    'level-3': { A: 16000, B: 17200, C: 18400, D: 20600 },
+    'level-3-quiver': { A: 16000, B: 17200, C: 18400, D: 20600 },
   },
   'sofa': {
-    'level-1': { A: 1500, B: 1700, C: 1900, D: 2200 },
-    'level-2': { A: 2000, B: 2300, C: 2700, D: 3200 },
-    'level-3': { A: 18000, B: 20000, C: 22000, D: 24000 },
-    'level-3-quiver': { A: 18000, B: 20000, C: 22000, D: 24000 },
+    'level-1': { A: 1400, B: 1600, C: 1800, D: 2000 },
+    'level-2': { A: 1500, B: 1700, C: 1900, D: 2100 },
+    'level-3': { A: 11700, B: 12900, C: 13100, D: 13300 },
+    'level-3-quiver': { A: 11700, B: 12900, C: 13100, D: 13300 },
   },
 };
 
@@ -65,6 +55,6 @@ export const COLORS = {
   orderPlaceholder: '#3B82F633',
   demandProjection: '#4ecdc499',
   monthDivider: '#ffffff44',
-  marketingEventLine: '#ff4444',
-  marketingEventBg: '#ff444433',
+  marketingEventLine: '#fbbf24',
+  marketingEventBg: '#fbbf2433',
 };

@@ -31,7 +31,8 @@ export interface MarketingEvent {
   triggerTime: number;      // When event starts (in game seconds)
   duration: number;         // How long it lasts (seconds)
   demandMultiplier: number; // e.g., 2.0 for 100% increase
-  label: string;            // "Marketing Campaign Begins!"
+  label: string;            // "Marketing Campaign"
+  notifyTime?: number;      // When the zone becomes visible on the graph (defaults to triggerTime)
 }
 
 // Demand segment for more flexible demand curves
@@ -95,8 +96,7 @@ export type GameStatus =
   | 'level-3'         // Playing Level 3
   | 'level-3-end'     // Level 3 results
   | 'quiver-demo'     // Watching Quiver play Level 3
-  | 'educational'     // How Quiver works
-  | 'cta';            // Contact form
+  | 'educational';    // Outro slides
 
 export interface IntroSlide {
   id: string;
@@ -104,7 +104,7 @@ export interface IntroSlide {
   text: string;
   subtext?: string;
   image?: string;
-  imagePosition?: 'left' | 'right';
+  imagePosition?: 'left' | 'right' | 'center';
 }
 
 // Score results for a level
@@ -146,5 +146,4 @@ export type GameAction =
   | { type: 'START_LEVEL_2_INFO' }
   | { type: 'START_QUIVER_DEMO'; level: LevelConfig }
   | { type: 'GO_TO_EDUCATIONAL' }
-  | { type: 'GO_TO_CTA' }
   | { type: 'TRIGGER_MARKETING_EVENT'; eventIndex: number };
