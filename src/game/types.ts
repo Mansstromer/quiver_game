@@ -129,6 +129,7 @@ export interface GameState {
   selectedProduct: ProductConfig | null;
   levelScores: LevelScore[];         // Scores for completed levels
   activeMarketingEvents: number[];   // Indices of currently active marketing events
+  nightmareMode: boolean;
 }
 
 export type GameAction =
@@ -148,4 +149,5 @@ export type GameAction =
   | { type: 'START_QUIVER_DEMO'; level: LevelConfig }
   | { type: 'GO_TO_EDUCATIONAL' }
   | { type: 'TRIGGER_MARKETING_EVENT'; eventIndex: number }
-  | { type: 'RETRY_LEVEL' };
+  | { type: 'RETRY_LEVEL' }
+  | { type: 'START_NIGHTMARE' };

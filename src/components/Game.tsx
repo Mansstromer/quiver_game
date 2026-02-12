@@ -31,11 +31,13 @@ export function Game() {
     startQuiverDemo,
     goToStart,
     retryLevel,
+    startNightmare,
   } = useGameState();
   const { playSound, initialize } = useSoundEffects();
   const prevStockoutRef = useRef(false);
   const prevOrderCountRef = useRef(0);
   const [showOrderTooltip, setShowOrderTooltip] = useState(false);
+  const [showForecastOverride, setShowForecastOverride] = useState(false);
   const hasPlacedFirstOrder = useRef(false);
   const [graphSize, setGraphSize] = useState({
     width: Math.min(800, Math.floor(window.innerWidth * 0.52)),
@@ -89,9 +91,20 @@ export function Game() {
     }
   }, [state.status, level1, level2, level3, level3Quiver]);
 
+  // In nightmare mode, hide forecast unless toggled on (except during quiver-demo)
+  const effectiveLevel = useMemo(() => {
+    if (!currentLevel) return currentLevel;
+    if (!state.nightmareMode) return currentLevel;
+    if (state.status === 'quiver-demo') return currentLevel;
+    return {
+      ...currentLevel,
+      showForecast: showForecastOverride,
+    };
+  }, [currentLevel, state.nightmareMode, state.status, showForecastOverride]);
+
   // Get the first SKU state for single-SKU display (Level 1 & 2)
   const firstSkuState = state.skuStates[0];
-  const firstSkuConfig = currentLevel?.skus[0];
+  const firstSkuConfig = effectiveLevel?.skus[0];
 
 
   useGameLoop({
@@ -195,6 +208,12 @@ export function Game() {
     goToStart();
   };
 
+  const handleStartNightmare = () => {
+    playSound('click');
+    setShowForecastOverride(false);
+    startNightmare();
+  };
+
   const handlePlayClick = () => {
     playSound('click');
   };
@@ -202,6 +221,8 @@ export function Game() {
   // Determine if we're in a playing state for single-SKU games
   const isSingleSkuPlaying = state.status === 'level-1' || state.status === 'level-2';
   const isMultiSkuPlaying = state.status === 'level-3' || state.status === 'quiver-demo';
+  const isPlaying = isSingleSkuPlaying || isMultiSkuPlaying;
+  const showNightmareToggle = state.nightmareMode && isPlaying && state.status !== 'quiver-demo';
 
   // Prevent spacebar from scrolling the page during any game state
   useEffect(() => {
@@ -240,7 +261,7 @@ export function Game() {
     <div className="game-container">
       {showGlobalLogo && (
         <div className="global-quiver-logo">
-          <img src="/quiver-logo.png" alt="Quiver" />
+          <img src="/quiver-logo.svg" alt="Quiver" />
         </div>
       )}
       <header className="game-header">
@@ -248,15 +269,15 @@ export function Game() {
       </header>
 
       {/* Single SKU Game View (Level 1 & 2) */}
-      {isSingleSkuPlaying && currentLevel && (
+      {isSingleSkuPlaying && effectiveLevel && (
         <OfficeDesk>
           <div className="screen-content">
-            <ScoreDisplay state={state} level={currentLevel} />
+            <ScoreDisplay state={state} level={effectiveLevel} />
             <InventoryGraph
               state={state}
               skuState={firstSkuState}
               skuConfig={firstSkuConfig}
-              level={currentLevel}
+              level={effectiveLevel}
               width={graphSize.width}
               height={graphSize.height}
               maxInventory={state.selectedProduct?.maxInventory ?? 150}
@@ -272,7 +293,7 @@ export function Game() {
                 state={state}
                 skuState={firstSkuState}
                 skuConfig={firstSkuConfig}
-                levelQuiverEnabled={currentLevel.quiverEnabled}
+                levelQuiverEnabled={effectiveLevel.quiverEnabled}
                 onPlaceOrder={handlePlaceOrder}
                 onEnableQuiver={enableQuiver}
                 onPlayClick={handlePlayClick}
@@ -283,10 +304,10 @@ export function Game() {
       )}
 
       {/* Multi-SKU Game View (Level 3 & Quiver Demo) */}
-      {isMultiSkuPlaying && currentLevel && state.selectedProduct && (
+      {isMultiSkuPlaying && effectiveLevel && state.selectedProduct && (
         <MultiSKUGame
           state={state}
-          level={currentLevel}
+          level={effectiveLevel}
           product={state.selectedProduct}
           onPlaceOrder={handlePlaceOrderForSku}
           quiverAutoPlay={state.status === 'quiver-demo'}
@@ -351,11 +372,21 @@ export function Game() {
         />
       )}
 
+      {showNightmareToggle && (
+        <button
+          className={`nightmare-forecast-toggle ${showForecastOverride ? 'active' : ''}`}
+          onClick={() => setShowForecastOverride(prev => !prev)}
+        >
+          {showForecastOverride ? 'Hide Forecast' : 'Show Forecast'}
+        </button>
+      )}
+
       {state.status === 'educational' && (
         <OutroScreen
           playerScore={level3PlayerScore}
           quiverScore={quiverScore}
           onPlayAgain={handlePlayAgain}
+          onNightmare={handleStartNightmare}
         />
       )}
 

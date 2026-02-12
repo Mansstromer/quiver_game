@@ -2215,6 +2215,70 @@ body {
 }
 
 
+/* Nightmare mode easter egg */
+.nightmare-easter-egg {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.nightmare-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
+.nightmare-egg-button {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  color: var(--color-danger);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s ease;
+}
+
+.nightmare-egg-button:hover {
+  opacity: 1;
+  border-color: var(--color-danger);
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.nightmare-forecast-toggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.nightmare-forecast-toggle:hover {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.nightmare-forecast-toggle.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 /* Responsive adjustments */
 @media (max-width: 900px) {
   .game-container {

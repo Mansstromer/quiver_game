@@ -390,11 +390,11 @@ function drawReorderPointLine(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // Draw "ROP" label
+  // Draw "ROP" label on the right side
   ctx.fillStyle = '#8b5cf6';
   ctx.font = 'bold 9px DM Sans, sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText('ROP', 4, y - 4);
+  ctx.textAlign = 'right';
+  ctx.fillText('Reorder Point', width - 4, y - 4);
 }
 
 export function InventoryGraph({

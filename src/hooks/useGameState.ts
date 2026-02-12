@@ -21,6 +21,7 @@ const initialState: GameState = {
   selectedProduct: null,
   levelScores: [],
   activeMarketingEvents: [],
+  nightmareMode: false,
 };
 
 function createInitialSKUState(sku: SKUConfig): SKUState {
@@ -326,6 +327,14 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         quiverEnabled: true,
       };
 
+    case 'START_NIGHTMARE':
+      return {
+        ...initialState,
+        status: 'product-select',
+        selectedProduct: state.selectedProduct,
+        nightmareMode: true,
+      };
+
     case 'RESET_GAME':
       return {
         ...initialState,
@@ -409,6 +418,7 @@ export function useGameState() {
   );
   const resetGame = useCallback(() => dispatch({ type: 'RESET_GAME' }), []);
   const retryLevel = useCallback(() => dispatch({ type: 'RETRY_LEVEL' }), []);
+  const startNightmare = useCallback(() => dispatch({ type: 'START_NIGHTMARE' }), []);
 
   return {
     state,
@@ -428,5 +438,6 @@ export function useGameState() {
     goToEducational,
     resetGame,
     retryLevel,
+    startNightmare,
   };
 }

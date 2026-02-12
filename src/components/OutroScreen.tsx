@@ -6,9 +6,10 @@ interface OutroScreenProps {
   playerScore?: LevelScore;
   quiverScore?: LevelScore;
   onPlayAgain: () => void;
+  onNightmare: () => void;
 }
 
-export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScreenProps) {
+export function OutroScreen({ playerScore, quiverScore, onPlayAgain, onNightmare }: OutroScreenProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isFading, setIsFading] = useState(false);
 
@@ -52,8 +53,8 @@ export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScre
         {/* Slide 2: Scale Message */}
         {currentSlide === 1 && (
           <div className="outro-content">
-            <h1 className="outro-headline">Now imagine 400 SKUs. Across 12 warehouses. Every single day.</h1>
-            <p className="outro-subtext">That's the reality for most supply chain teams.</p>
+            <h1 className="outro-headline">Now imagine managing 400 products instead of 4.</h1>
+            <p className="outro-subtext">That's the reality for most supply chain teams face every day.</p>
             <button className="start-button" onClick={handleNext}>Next</button>
           </div>
         )}
@@ -102,6 +103,13 @@ export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScre
             }`}
           />
         ))}
+      </div>
+
+      <div className="nightmare-easter-egg">
+        <span className="nightmare-hint">Try playing without a forecast</span>
+        <button className="nightmare-egg-button" onClick={onNightmare}>
+          Nightmare Mode
+        </button>
       </div>
     </div>
   );
