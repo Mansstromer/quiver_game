@@ -1582,39 +1582,6 @@ body {
 }
 
 /* Marketing event notification - fixed position overlay */
-.marketing-event-notification {
-  position: fixed;
-  top: 80px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 10px 24px;
-  background: rgba(251, 191, 36, 0.95);
-  border: 2px solid #fbbf24;
-  border-radius: 12px;
-  color: #1a1a2e;
-  font-weight: 600;
-  animation: marketingFlash 0.8s ease-in-out infinite;
-  z-index: 50;
-  box-shadow: 0 4px 20px rgba(251, 191, 36, 0.4);
-}
-
-.notification-icon {
-  font-size: 18px;
-}
-
-.notification-text {
-  font-size: 14px;
-}
-
-@keyframes marketingFlash {
-  0%, 100% { background: rgba(251, 191, 36, 0.95); }
-  50% { background: rgba(251, 191, 36, 0.75); }
-}
-
 /* Marketing Event Popup */
 .marketing-popup-overlay {
   z-index: 150;
@@ -1993,26 +1960,6 @@ body {
   color: var(--color-primary);
 }
 
-.share-linkedin-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  background: #0A66C2;
-  border: none;
-  border-radius: 12px;
-  color: white;
-  font-size: 16px;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.share-linkedin-button:hover {
-  background: #004182;
-  transform: translateY(-2px);
-}
 
 .score-comparison {
   display: flex;

@@ -91,15 +91,6 @@ export function Game() {
   const firstSkuState = state.skuStates[0];
   const firstSkuConfig = currentLevel?.skus[0];
 
-  // Check if any marketing event is currently active (for single-SKU games)
-  const activeMarketingEvent = useMemo(() => {
-    if (!currentLevel) return null;
-    return currentLevel.marketingEvents.find((event) => {
-      const isActive = state.time >= event.triggerTime &&
-                       state.time < event.triggerTime + event.duration;
-      return isActive;
-    });
-  }, [currentLevel, state.time]);
 
   useGameLoop({
     state,
@@ -253,13 +244,6 @@ export function Game() {
       {isSingleSkuPlaying && currentLevel && (
         <OfficeDesk>
           <div className="screen-content">
-            {/* Marketing event notification */}
-            {activeMarketingEvent && (
-              <div className="marketing-event-notification">
-                <span className="notification-icon">📢</span>
-                <span className="notification-text">{activeMarketingEvent.label}</span>
-              </div>
-            )}
             <ScoreDisplay state={state} level={currentLevel} />
             <InventoryGraph
               state={state}

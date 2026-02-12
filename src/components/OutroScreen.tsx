@@ -85,15 +85,6 @@ export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScre
               >
                 Book a Demo
               </a>
-              <a
-                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://quiver.dk')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="share-linkedin-button"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Share on LinkedIn
-              </a>
               <button className="start-button outro-play-again" onClick={onPlayAgain}>
                 Play Again
               </button>
