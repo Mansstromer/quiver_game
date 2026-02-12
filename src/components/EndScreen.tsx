@@ -45,9 +45,9 @@ function getMessage(grade: string, levelNumber: number): string {
     } else if (grade === 'C') {
       return 'Good effort! There\'s room for improvement.';
     } else if (grade === 'D') {
-      return 'Not bad, but stockouts hurt your score.';
+      return 'Not bad, but the imaginary CFO of the company is not really happy...';
     } else {
-      return 'Ouch! Those stockouts were costly.';
+      return 'Ouch! That was rough. Try to avoid stockouts and overstocking next time!';
     }
   }
 }
@@ -99,9 +99,9 @@ export function EndScreen({
             <span className="cost-label">Ordering Costs:</span>
             <span className="cost-value">{formatCost(totalOrderingCost)}</span>
           </div>
-          <div className="cost-row stockout">
+          <div className={`cost-row${totalStockoutCost > 0 ? ' stockout' : ''}`}>
             <span className="cost-label">Stockout Penalties:</span>
-            <span className="cost-value-plus">+ {formatCost(totalStockoutCost)}</span>
+            <span className={totalStockoutCost > 0 ? 'cost-value-plus' : 'cost-value'}>+ {formatCost(totalStockoutCost)}</span>
           </div>
           <div className="cost-divider"></div>
           <div className="cost-row total">

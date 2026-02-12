@@ -135,17 +135,22 @@ function renderSkuCard(
         </span>
       </div>
 
-      <InventoryGraph
-        state={state}
-        skuState={skuState}
-        skuConfig={skuConfig}
-        level={level}
-        width={graphSize.width}
-        height={graphSize.height}
-        maxInventory={product.maxInventory * 0.6}
-        compact={true}
-        reorderPoint={quiverAutoPlay && metrics ? metrics.reorderPoint : undefined}
-      />
+      <div
+        style={!quiverAutoPlay ? { cursor: 'pointer' } : undefined}
+        onClick={!quiverAutoPlay ? () => skuState.pendingOrders.length < 5 && onPlaceOrder(skuConfig.id) : undefined}
+      >
+        <InventoryGraph
+          state={state}
+          skuState={skuState}
+          skuConfig={skuConfig}
+          level={level}
+          width={graphSize.width}
+          height={graphSize.height}
+          maxInventory={product.maxInventory * 0.6}
+          compact={true}
+          reorderPoint={quiverAutoPlay && metrics ? metrics.reorderPoint : undefined}
+        />
+      </div>
 
       {quiverAutoPlay && metrics ? (
         <div className={`quiver-metrics-panel ${metrics.shouldOrder ? 'quiver-metrics-ordering' : ''}`}>
@@ -167,7 +172,7 @@ function renderSkuCard(
             <span title="Safety Stock">SS {Math.floor(metrics.safetyStock)}</span>
             <span className="quiver-metrics-op">+</span>
             <span title="Lead Time Demand">LTD {Math.floor(metrics.leadTimeDemand)}</span>
-            <span className="quiver-metrics-op">=</span>
+            <span className="quiver-metrics-op">× ¼ =</span>
             <span title="Reorder Point">ROP {Math.floor(metrics.reorderPoint)}</span>
           </div>
         </div>

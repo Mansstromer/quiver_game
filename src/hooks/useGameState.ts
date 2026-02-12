@@ -287,11 +287,9 @@ function gameReducer(state: GameState, action: GameAction): GameState {
           status: 'level-2-info',
         };
       } else if (state.currentLevel === 2) {
-        // Will need to start level 3
         return {
           ...state,
-          status: 'level-3',
-          currentLevel: 3,
+          status: 'level-3-info',
         };
       }
       return state;

@@ -45,9 +45,9 @@ export function ProductSelect({ onSelect }: ProductSelectProps) {
     <div className="overlay product-select-overlay">
       <div className="product-select-content">
         <h1>Choose Your Product</h1>
-        <p className="subtitle">Select a product to manage</p>
-
-        <div className="product-grid">
+        <div className="product-grid-wrapper">
+          <span className="product-grid-hint">Hover over the metrics to see definitions</span>
+          <div className="product-grid">
           {PRODUCTS.map((product) => (
             <button
               key={product.id}
@@ -125,6 +125,7 @@ export function ProductSelect({ onSelect }: ProductSelectProps) {
               </div>
             </button>
           ))}
+          </div>
         </div>
       </div>
     </div>

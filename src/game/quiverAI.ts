@@ -15,8 +15,9 @@ function isPlayingStatus(status: string): boolean {
  * 2. Arriving Orders = pending orders arriving before (now + leadTime)
  * 3. Predicted Inventory = on-hand - predicted demand + arriving orders
  * 4. Safety Stock = z × σ × √(lead_time)  where z = 1.65 (95% service level)
+ * 5. Reorder Point = Lead Time Demand + Safety Stock
  *
- * Order when: Predicted Inventory ≤ Safety Stock
+ * Order when: Predicted Inventory ≤ Reorder Point
  */
 
 // Get the effective demand rate for a segment, splitting it into sub-intervals
@@ -180,23 +181,20 @@ export function shouldQuiverOrderForSKU(
   const effectiveLeadTime = baseLeadTime * level.leadTimeMultiplier;
   if (state.time + effectiveLeadTime > level.duration) return false;
 
-  // Calculate safety stock threshold
+  // Calculate safety stock and reorder point
   const stdDev = calculateDemandStdDev(skuConfig, level);
   const safetyStock = calculateSafetyStock(stdDev, effectiveLeadTime);
+  const avgDemandRate = calculateAverageDemandRate(skuConfig, level);
+  const leadTimeDemand = avgDemandRate * effectiveLeadTime;
+  const reorderPoint = (leadTimeDemand + safetyStock) * 0.25;
 
   // Predict inventory at the time an order placed now would arrive
   const predictedInventory = predictInventoryAtTime(
     skuState, skuConfig, level, state.time, state.time + effectiveLeadTime
   );
 
-  // Minimum time between orders to prevent over-ordering
-  const minTimeBetweenOrders = 2;
-
-  // Order when predicted inventory at arrival time would be at or below safety stock
-  return (
-    predictedInventory <= safetyStock &&
-    state.time - skuState.lastOrderTime >= minTimeBetweenOrders
-  );
+  // Order when predicted inventory at arrival time would be at or below reorder point
+  return predictedInventory <= reorderPoint;
 }
 
 // Expose Quiver's internal metrics for UI display (Level 4 demo)
@@ -220,9 +218,9 @@ export function getQuiverMetricsForSKU(
   const stdDev = calculateDemandStdDev(skuConfig, level);
 
   const safetyStock = calculateSafetyStock(stdDev, effectiveLeadTime);
-  // Use forecast-based lead time demand instead of flat average
-  const leadTimeDemand = predictDemandBetween(skuConfig, level, state.time, state.time + effectiveLeadTime);
-  const reorderPoint = safetyStock; // Threshold is now just safety stock
+  const avgDemandRate = calculateAverageDemandRate(skuConfig, level);
+  const leadTimeDemand = avgDemandRate * effectiveLeadTime;
+  const reorderPoint = (leadTimeDemand + safetyStock) * 0.25;
   const inventoryPosition = calculateInventoryPosition(skuState);
   const predictedInventory = predictInventoryAtTime(
     skuState, skuConfig, level, state.time, state.time + effectiveLeadTime

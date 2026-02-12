@@ -61,9 +61,9 @@ export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScre
         {/* Slide 3: Product Pitch */}
         {currentSlide === 2 && (
           <div className="outro-content">
-            <h1 className="outro-headline">Quiver makes those ordering decisions for you. Automatically.</h1>
+            <h1 className="outro-headline">Quiver is an inventory optimization engine.</h1>
             <p className="outro-subtext">
-              It connects to your ERP, reads your demand signals, and places the right orders at the right time — so your team doesn't have to.
+              It reads your demand signals, and suggests the right orders at the right time.
             </p>
             <button className="start-button" onClick={handleNext}>Next</button>
           </div>
@@ -74,7 +74,7 @@ export function OutroScreen({ playerScore, quiverScore, onPlayAgain }: OutroScre
           <div className="outro-content">
             <h1 className="outro-headline">Want to see what Quiver can do with your data?</h1>
             <p className="outro-subtext">
-              Book a demo and we'll show you — or play again and try to beat Quiver's score.
+              Book a demo below and we'll show you, or play again and try to beat Quiver's score. Also, thanks for playing!
             </p>
             <div className="outro-buttons">
               <a

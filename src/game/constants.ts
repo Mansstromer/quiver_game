@@ -56,5 +56,5 @@ export const COLORS = {
   demandProjection: '#4ecdc499',
   monthDivider: '#ffffff44',
   marketingEventLine: '#fbbf24',
-  marketingEventBg: '#fbbf2433',
+  marketingEventBg: '#fbbf241a',
 };

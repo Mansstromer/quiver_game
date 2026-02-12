@@ -914,14 +914,37 @@ body {
 .product-select-content h1 {
   font-size: clamp(30px, 2.4vw, 40px);
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: clamp(32px, 3vw, 48px);
   color: var(--color-text);
 }
 
-.product-select-content .subtitle {
-  font-size: 18px;
-  color: var(--color-text-secondary);
-  margin-bottom: 32px;
+.product-grid-wrapper {
+  position: relative;
+}
+
+.product-grid-hint {
+  position: absolute;
+  right: calc(100% + 16px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--color-text);
+  opacity: 0.7;
+  font-style: italic;
+  text-align: right;
+  pointer-events: none;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  animation: hint-blink 1s ease-in-out 2s 1;
+}
+
+@keyframes hint-blink {
+  0% { border-color: transparent; background: transparent; }
+  50% { border-color: rgba(255, 215, 0, 0.6); background: rgba(255, 215, 0, 0.1); }
+  100% { border-color: transparent; background: transparent; }
 }
 
 .product-grid {
@@ -1945,7 +1968,7 @@ body {
 }
 
 .outro-text {
-  font-size: clamp(18px, 1.35vw, 22px);
+  font-size: clamp(24px, 2vw, 32px);
   color: var(--color-text);
   margin: 24px 0 32px 0;
   font-weight: 600;

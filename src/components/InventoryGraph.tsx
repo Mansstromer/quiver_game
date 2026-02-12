@@ -104,7 +104,7 @@ function drawMarketingEventLine(
   ctx.fillStyle = COLORS.marketingEventBg;
   ctx.fillRect(x, 0, endX - x, height);
 
-  // Draw label (unless compact mode)
+  // Draw corner label (unless compact mode)
   if (!compact) {
     ctx.fillStyle = COLORS.marketingEventLine;
     ctx.font = 'bold 14px DM Sans, sans-serif';

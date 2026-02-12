@@ -9,6 +9,7 @@ import { StartScreen } from './StartScreen';
 import { ProductSelect } from './ProductSelect';
 import { RulesScreen } from './RulesScreen';
 import { Level2InfoScreen } from './Level2InfoScreen';
+import { Level3InfoScreen } from './Level3InfoScreen';
 import { MultiSKUGame } from './MultiSKUGame';
 import { EndScreen } from './EndScreen';
 import { OutroScreen } from './OutroScreen';
@@ -328,10 +329,14 @@ export function Game() {
           state={state}
           levelNumber={2}
           productId={state.selectedProduct?.id}
-          onContinue={handleStartLevel3}
+          onContinue={handleContinueToNextLevel}
           onRetry={handleRetryLevel}
           continueText="Continue to Level 3"
         />
+      )}
+
+      {state.status === 'level-3-info' && (
+        <Level3InfoScreen onStart={handleStartLevel3} />
       )}
 
       {state.status === 'level-3-end' && (

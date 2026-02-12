@@ -93,6 +93,7 @@ export type GameStatus =
   | 'level-2-info'    // Pre-Level 2 info screen
   | 'level-2'         // Playing Level 2
   | 'level-2-end'     // Level 2 results
+  | 'level-3-info'    // Pre-Level 3 info screen
   | 'level-3'         // Playing Level 3
   | 'level-3-end'     // Level 3 results
   | 'quiver-demo'     // Watching Quiver play Level 3
