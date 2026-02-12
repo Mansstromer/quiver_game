@@ -29,6 +29,7 @@ export function Game() {
     continueToNextLevel,
     startQuiverDemo,
     goToStart,
+    retryLevel,
   } = useGameState();
   const { playSound, initialize } = useSoundEffects();
   const prevStockoutRef = useRef(false);
@@ -177,6 +178,11 @@ export function Game() {
     continueToNextLevel();
   };
 
+  const handleRetryLevel = () => {
+    playSound('click');
+    retryLevel();
+  };
+
   const handleStartQuiverDemo = () => {
     if (!level3Quiver) return;
     playSound('click');
@@ -308,6 +314,7 @@ export function Game() {
           levelNumber={1}
           productId={state.selectedProduct?.id}
           onContinue={handleContinueToNextLevel}
+          onRetry={handleRetryLevel}
           continueText="Continue to Level 2"
         />
       )}
@@ -322,6 +329,7 @@ export function Game() {
           levelNumber={2}
           productId={state.selectedProduct?.id}
           onContinue={handleStartLevel3}
+          onRetry={handleRetryLevel}
           continueText="Continue to Level 3"
         />
       )}
@@ -332,6 +340,7 @@ export function Game() {
           levelNumber={3}
           productId={state.selectedProduct?.id}
           onContinue={handleStartQuiverDemo}
+          onRetry={handleRetryLevel}
           continueText="Try Level 3 with Quiver Engine"
           showQuiverButton
         />

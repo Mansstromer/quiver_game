@@ -6,6 +6,7 @@ interface EndScreenProps {
   levelNumber: 1 | 2 | 3;
   productId?: string;
   onContinue: () => void;
+  onRetry?: () => void;
   continueText?: string;
   showQuiverButton?: boolean;
 }
@@ -56,6 +57,7 @@ export function EndScreen({
   levelNumber,
   productId,
   onContinue,
+  onRetry,
   continueText = 'Continue',
   showQuiverButton = false,
 }: EndScreenProps) {
@@ -111,6 +113,14 @@ export function EndScreen({
         <p className="score-message">{message}</p>
 
         <div className="end-buttons">
+          {onRetry && (
+            <button
+              className="retry-button"
+              onClick={onRetry}
+            >
+              Retry Level
+            </button>
+          )}
           <button
             className={showQuiverButton ? 'try-quiver-button' : 'start-button'}
             onClick={onContinue}

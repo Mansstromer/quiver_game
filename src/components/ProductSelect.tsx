@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ProductConfig } from '../game/types';
 import { PRODUCTS } from '../game/products';
+import { BASE_LEAD_TIME, SECONDS_PER_MONTH } from '../game/constants';
 
 interface ProductSelectProps {
   onSelect: (product: ProductConfig) => void;
@@ -14,9 +15,12 @@ interface TooltipInfo {
 const TOOLTIPS: Record<string, string> = {
   holdingCost: "Annual cost of storing inventory as a percentage of product value. Includes warehousing, insurance, and obsolescence risk.",
   orderingCost: "Fixed cost incurred each time you place an order. Covers processing, shipping, and handling.",
+  leadTime: "Time between placing an order and receiving it. Longer lead times require more planning ahead.",
   revenue: "Price received per unit sold to customers.",
   margin: "Profit per unit: Revenue minus Cost of Goods Sold. This is what you lose during stockouts.",
 };
+
+const LEAD_TIME_DAYS = Math.round((BASE_LEAD_TIME / SECONDS_PER_MONTH) * 30);
 
 function calculateMargin(product: ProductConfig): number {
   return ((product.revenuePerUnit - product.cogsPerUnit) / product.revenuePerUnit) * 100;
@@ -76,6 +80,17 @@ export function ProductSelect({ onSelect }: ProductSelectProps) {
                     <span className="detail-label">Ordering Cost</span>
                     <span className="detail-value">€{product.orderingCost}/order</span>
                     {activeTooltip?.id === `${product.id}-orderingCost` && (
+                      <div className="tooltip">{activeTooltip.text}</div>
+                    )}
+                  </div>
+                  <div
+                    className="product-detail with-tooltip"
+                    onMouseEnter={() => handleMouseEnter(product.id, 'leadTime')}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <span className="detail-label">Lead Time</span>
+                    <span className="detail-value">~{LEAD_TIME_DAYS} days</span>
+                    {activeTooltip?.id === `${product.id}-leadTime` && (
                       <div className="tooltip">{activeTooltip.text}</div>
                     )}
                   </div>

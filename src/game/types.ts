@@ -146,4 +146,5 @@ export type GameAction =
   | { type: 'START_LEVEL_2_INFO' }
   | { type: 'START_QUIVER_DEMO'; level: LevelConfig }
   | { type: 'GO_TO_EDUCATIONAL' }
-  | { type: 'TRIGGER_MARKETING_EVENT'; eventIndex: number };
+  | { type: 'TRIGGER_MARKETING_EVENT'; eventIndex: number }
+  | { type: 'RETRY_LEVEL' };

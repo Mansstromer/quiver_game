@@ -343,6 +343,21 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
     }
 
+    case 'RETRY_LEVEL': {
+      if (!state.levelConfig) return state;
+      // Remove the score from the just-completed level
+      const levelId = `level-${state.currentLevel}`;
+      const filteredScores = state.levelScores.filter(s => s.levelId !== levelId);
+      return {
+        ...state,
+        status: getPlayingStatus(state.currentLevel),
+        time: 0,
+        skuStates: state.levelConfig.skus.map(createInitialSKUState),
+        activeMarketingEvents: [],
+        levelScores: filteredScores,
+      };
+    }
+
     default:
       return state;
   }
@@ -395,6 +410,7 @@ export function useGameState() {
     []
   );
   const resetGame = useCallback(() => dispatch({ type: 'RESET_GAME' }), []);
+  const retryLevel = useCallback(() => dispatch({ type: 'RETRY_LEVEL' }), []);
 
   return {
     state,
@@ -413,5 +429,6 @@ export function useGameState() {
     startQuiverDemo,
     goToEducational,
     resetGame,
+    retryLevel,
   };
 }
